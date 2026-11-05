@@ -951,6 +951,12 @@ stage_repository() {
             done
             if [ "$cloned" = false ]; then
                 rm -rf "$staged"
+                # HTTP 400 during blob materialization is a transport failure,
+                # not a local checkout conflict. Give users actionable next steps
+                # without changing their global Git configuration.
+                if printf '%s' "$(native_detail)" | grep -Eiq 'HTTP 400|requested URL returned error: 400'; then
+                    log_warn "Git returned HTTP 400 while downloading checkout objects. Check proxy/VPN or network filtering, then retry. If it persists, try another network and inspect Git's HTTP trace with GIT_TRACE_CURL=1."
+                fi
                 fail "could not check out ${INSTALL_COMMIT:-the cloned tree}; no checkout published$(native_detail)" git_checkout_failed
             fi
         fi
